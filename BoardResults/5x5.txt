@@ -1,0 +1,30 @@
+n=31
+
+minData { minIndex: 52606, minVal: 36.483870967741936 }
+MIN Rolls Board Result [
+  'BB', 'BB', 'RB', 'RB', 'RB',
+  'GB', 'GB', 'GB', 'GB', 'GB',
+  'GB', 'GB', 'GB', 'GB', 'GR',
+  'GR', 'GR', 'GR', 'GG', 'GG',
+  'GG', 'GG', 'GG', 'GG', 'GG'
+] { BB: 2, RB: 3, GB: 9, GR: 4, GG: 7 }
+
+n=90
+minData { minIndex: 50835, minVal: 38.36666666666667 }
+MIN Rolls Board Result [
+  'BB', 'BB', 'RB', 'RB', 'GB',
+  'GB', 'GB', 'GB', 'GB', 'GB',
+  'GB', 'GB', 'GB', 'GB', 'GR',
+  'GR', 'GR', 'GR', 'GG', 'GG',
+  'GG', 'GG', 'GG', 'GG', 'GG'
+] { BB: 2, RB: 2, GB: 10, GR: 4, GG: 7 }
+
+n=300
+minData { minIndex: 50835, minVal: 38.053333333333335 }
+MIN Rolls Board Result [
+  'BB', 'BB', 'RB', 'RB', 'GB',
+  'GB', 'GB', 'GB', 'GB', 'GB',
+  'GB', 'GB', 'GB', 'GB', 'GR',
+  'GR', 'GR', 'GR', 'GG', 'GG',
+  'GG', 'GG', 'GG', 'GG', 'GG'
+] { BB: 2, RB: 2, GB: 10, GR: 4, GG: 7 }
