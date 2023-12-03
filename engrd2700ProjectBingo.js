@@ -57,10 +57,10 @@ function getDiceRoll() {
 }
 
 
-function generateGameRolls() {
+function generateGameRolls(numRolls=25) {
   let i = 0;
   let mapping = {}
-  while (i < 25) {
+  while (i < numRolls) {
 
     let diceRoll = getDiceRoll();
     // console.log("HERE IS DICE ROLL", diceRoll)
@@ -81,11 +81,11 @@ function generateGameRolls() {
 
 // Example usage
 
-function getDiceProbabilitiesOverTrials(numberOfTrials) {
+function getDiceProbabilitiesOverTrials(numberOfTrials, numRolls) {
   let trialsRolls = {}
   let iterTrials = numberOfTrials
   while (iterTrials > 1) {
-    let gameMapping = generateGameRolls();
+    let gameMapping = generateGameRolls(numRolls);
 
     let keys = Object.keys(gameMapping)
     for (let i of keys) {
@@ -101,16 +101,7 @@ function getDiceProbabilitiesOverTrials(numberOfTrials) {
   }
   return trialsRolls
 }
-//Uncomment to get the dice probabilties calculated
-//Probabilistically
-/*   let numberOfTrials=100000
-  let trialsRolls = getDiceProbabilitiesOverTrials(numberOfTrials)
-  
-  console.log("--------------------------------")
-  for(let i of (Object.keys(trialsRolls)).sort()){
-    console.log(i+": "+trialsRolls[i]/numberOfTrials)
-  }
-  console.log("--------------------------------"); */
+
 
 
 
@@ -171,39 +162,9 @@ function averageNumberOfRollsPerBoard(board, numberOfTrialsForBoard) {
 const fs = require('fs');
 const util = require('util');
 
-const FiveByFiveFilePath = 'BoardArrays/5x5.txt';
-const FourByFourFilePath = 'BoardArrays/4x4.txt';
-const ThreeByThreeFilePath = 'BoardArrays/3x3.txt';
-const TwoByTwoFilePath = 'BoardArrays/2x2.txt';
-const OneByOneFilePath = 'BoardArrays/1x1.txt'
-
-
-// Specify the path to the file
-const filePath = FiveByFiveFilePath
-
-//Number of trials per board
-const numSamples = 1000
-
-
-let testBoard = []
 
 
 
-try {
-  // Read the contents of the file synchronously
-  const data = fs.readFileSync(filePath, 'utf8');
-
-  // Process the contents of the file
-  // console.log('File contents:', data);
-
-  testBoard = JSON.parse(data)
-
-  // console.log('Parsed data:', FiveByFiveBoards);
-
-  // Continue with the rest of your code after reading and processing the file
-} catch (error) {
-  console.error('Error reading the file:', error);
-}
 
 
 
@@ -237,37 +198,6 @@ function boardConverter(convertList) {
 
 // console.log("HERE IS TESTING BOARD", testBoard);
 // console.log("HERE ARE THE TOTAL NUMBER OF BOARDS", FiveByFiveBoards.length)
-
-
-let convertedBoards = boardConverter(testBoard);
-// console.log("HERE ARE THE CONVERTED BOARDS", convertedBoards);
-
-
-
-let averageTimeList = []
-let boardNumber = 0
-let currentProg = 0
-let totalStartTime = Date.now()
-for (let i of convertedBoards) {
-  let startTime = Date.now()
-
-
-  // console.time("AverageNumRollsPerBoard")
-  let averageNumber = averageNumberOfRollsPerBoard(i, numSamples);
-  // console.timeEnd("AverageNumRollsPerBoard")
-  let endTime = Date.now();
-  let timeTaken = endTime - startTime;
-  if ((boardNumber / testBoard.length * 100) - 1 > currentProg && timeTaken > 0) {
-    console.log("Progress: ", (boardNumber / testBoard.length * 100).toFixed(2) + '%', ' | Time Left: ' + (timeTaken * (testBoard.length - boardNumber) / 1000).toFixed(2) + 's')
-    currentProg = (boardNumber / testBoard.length * 100)
-  }
-  if (!averageNumber) {
-    console.log("ERROR ENCOUNTERED");
-    return
-  }
-  averageTimeList.push(averageNumber);
-  boardNumber++
-}
 
 function findMinIndexOfList(lst) {
   let min = 9999999999999999999999;
@@ -333,24 +263,158 @@ function histogramMaker(min, max, numBuckets, averageTimeList) {
   return outRanges
 
 }
-let maxData = findMaxIndexOfList(averageTimeList)
-let minData = findMinIndexOfList(averageTimeList);
-let histogram = histogramMaker(minData.minVal, maxData.maxVal, 20, averageTimeList);
-console.log("HERE IS THE HISTOGRAM", histogram)
-console.log("maxData", maxData)
-console.log("minData", minData);
-let out = [];
-let numberPerRoll = {}
-for (let i of convertedBoards[minData.minIndex]) {
-  out.push(diceNumberComboMappingsString[i]);
-  if (numberPerRoll[diceNumberComboMappingsString[i]] == null) {
-    numberPerRoll[diceNumberComboMappingsString[i]] = 1
-  } else {
-    numberPerRoll[diceNumberComboMappingsString[i]]++
-  }
+
+/**
+ * Actually brute forces all the possible board combos and returns 
+ * {maxData, minData, optimalBoard, minAverageNumberOfRollsTillWin, totalProcessingTime, histogram}
+ * @param {*} boardPath 
+ * @param {*} numSamples 
+ * @returns 
+ */
+function bruteForceOptimalBoardFinder(boardPath, numSamples=1000, progressLogging){
+      let testBoard = []
+   // Specify the path to the file
+   const filePath = boardPath
+      try {
+        // Read the contents of the file synchronously
+        const data = fs.readFileSync(filePath, 'utf8');
+
+        // Process the contents of the file
+        // console.log('File contents:', data);
+
+        testBoard = JSON.parse(data)
+
+        // console.log('Parsed data:', FiveByFiveBoards);
+
+        // Continue with the rest of your code after reading and processing the file
+      } catch (error) {
+        console.error('Error reading the file:', error);
+      }
+
+        
+
+      let convertedBoards = boardConverter(testBoard);
+      // console.log("HERE ARE THE CONVERTED BOARDS", convertedBoards);
+        
+   
+
+
+      let averageTimeList = []
+      let boardNumber = 0
+      let currentProg = 0
+      let totalStartTime = Date.now()
+      for (let i of convertedBoards) {
+        let startTime = Date.now()
+
+
+        // console.time("AverageNumRollsPerBoard")
+        let averageNumber = averageNumberOfRollsPerBoard(i, numSamples);
+        // console.timeEnd("AverageNumRollsPerBoard")
+        let endTime = Date.now();
+        let timeTaken = endTime - startTime;
+        if ((boardNumber / testBoard.length * 100) - 1 > currentProg && timeTaken > 0) {
+          if(progressLogging){
+            console.log("Progress: ", (boardNumber / testBoard.length * 100).toFixed(2) + '%', ' | Time Left: ' + (timeTaken * (testBoard.length - boardNumber) / 1000).toFixed(2) + 's')
+
+          }
+          currentProg = (boardNumber / testBoard.length * 100)
+        }
+        if (!averageNumber) {
+          console.log("ERROR ENCOUNTERED");
+          return
+        }
+        averageTimeList.push(averageNumber);
+        boardNumber++
+      }
+
+
+
+
+        let maxData = findMaxIndexOfList(averageTimeList)
+        let minData = findMinIndexOfList(averageTimeList);
+        let histogram = histogramMaker(minData.minVal, maxData.maxVal, 20, averageTimeList);
+          let out = [];
+          let numberPerRoll = {}
+          for (let i of convertedBoards[minData.minIndex]) {
+            out.push(diceNumberComboMappingsString[i]);
+            if (numberPerRoll[diceNumberComboMappingsString[i]] == null) {
+              numberPerRoll[diceNumberComboMappingsString[i]] = 1
+            } else {
+              numberPerRoll[diceNumberComboMappingsString[i]]++
+            }
+          }
+
+  return {maxData, minData, optimalBoard:out, minAverageNumberOfRollsTillWin:numberPerRoll, totalProcessingTime: ((Date.now() - totalStartTime) / 1000).toFixed(2) + 's', histogram: histogram}
 }
-console.log("MIN Rolls Board Result", out, numberPerRoll);
-console.log("TOTAL PROCESSING TIME: ", ((Date.now() - totalStartTime) / 1000).toFixed(2) + 's')
+
+function printBruteForceResult(rslt){
+  console.log("HERE IS THE HISTOGRAM", rslt.histogram)
+  console.log("maxData", rslt.maxData)
+  console.log("minData", rslt.minData);
+  console.log("MIN Rolls Board Result", rslt.optimalBoard, rslt.minAverageNumberOfRollsTillWin);
+  console.log("TOTAL PROCESSING TIME: ", rslt.totalProcessingTime)
+}
+
+/**
+ * Runs the dice Probabilities approach, over the number of trials calculates the average dice probabilities across the numRolls provided
+ * Returns an object of the average number of dice rolls for each tile type
+ * @param {*} numberOfTrials 
+ */
+function diceProbabilitiesApproach(numberOfTrials=100000, numRolls=25){
+  let trialsRolls = getDiceProbabilitiesOverTrials(numberOfTrials, numRolls)
+  let out = {}
+  for(let i of (Object.keys(trialsRolls)).sort()){
+    out[diceNumberComboMappingsString[i]]=(trialsRolls[i]/numberOfTrials)
+  }
+
+  return out
+}
+
+/**
+ * Returns an updated object where each of the dice rolls is rounded to a whole number 
+ * until we total the numTiles. It does this by rounding up the numbers closests to the next nearest whole number
+ */
+function greedyDiceProbsRoundingCalculator(diceProbs, numTiles){
+  let closestIndx = ''
+  let roundingDifference = 1.1
+  let currNumTiles=0
+  for(let j of Object.keys(diceProbs)){
+    currNumTiles+=Math.floor(diceProbs[j])
+  }
+  if(currNumTiles==numTiles){
+    for(let j of Object.keys(diceProbs)){
+      diceProbs[j]=Math.floor(diceProbs[j])
+    }
+    return diceProbs
+  }
+
+  for(let i of Object.keys(diceProbs)){
+    let roundingDif= (Math.ceil(diceProbs[i]) - diceProbs[i])
+    if(roundingDif<roundingDifference && roundingDif!=0){
+      roundingDifference=roundingDif;
+      closestIndx = i
+    }
+  }
+  diceProbs[closestIndx]=(Math.ceil(diceProbs[closestIndx]));
+  return greedyDiceProbsRoundingCalculator(diceProbs, numTiles);
+
+
+}
+
+const FiveByFiveFilePath = 'BoardArrays/5x5.txt';
+const FourByFourFilePath = 'BoardArrays/4x4.txt';
+const ThreeByThreeFilePath = 'BoardArrays/3x3.txt';
+const TwoByTwoFilePath = 'BoardArrays/2x2.txt';
+const OneByOneFilePath = 'BoardArrays/1x1.txt'
+
+let boardSize=25
+let diceProbs = diceProbabilitiesApproach(100000, boardSize);
+console.log("HERE ARE RAW DICE PROBS", diceProbs)
+let greedyRoundedProbability = greedyDiceProbsRoundingCalculator(diceProbs, boardSize)
+console.log("HERE IS THE GREEDY ROUNDED PROBABILITY", greedyRoundedProbability)
+
+let bruteForceResult = bruteForceOptimalBoardFinder(OneByOneFilePath, 1000, false)
+// printBruteForceResult(bruteForceResult)
 
 
 //Optimal Board for the 2x2 seems to be ["GB", "GB", "GG", "GR"]
