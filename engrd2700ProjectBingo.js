@@ -117,7 +117,6 @@ function getNumberOfRollsPerBoard(board) {
 
 
 
-
   while (board.length > 0) {
     let a = getDiceRoll();
     if (a == null) {
@@ -141,17 +140,37 @@ function getNumberOfRollsPerBoard(board) {
   return numberOfRolls
 }
 
+function calculateMedianIncremental(currentMedian, currentCount, newValue) {
+  currentCount++;
+  
+  if (currentCount === 1) {
+    // If it's the first value, set it as the median
+    return newValue;
+  }
+
+  if (newValue < currentMedian) {
+    // Inserting a smaller value, move current median left
+    return currentMedian - (currentMedian - newValue) / currentCount;
+  } else {
+    // Inserting an equal or larger value, move current median right
+    return currentMedian + (newValue - currentMedian) / currentCount;
+  }
+}
 function averageNumberOfRollsPerBoard(board, numberOfTrialsForBoard) {
   let numberOfTrialsForBoardIter = numberOfTrialsForBoard
   let sum = 0
-
+  let rollNumbers = []
+  let median = 0
   while (numberOfTrialsForBoardIter > 0) {
     let a = getNumberOfRollsPerBoard([...board])
     sum += a
+    rollNumbers.push(a);
+    median = calculateMedianIncremental(median, rollNumbers.length, a);
     numberOfTrialsForBoardIter--
   }
 
-  return (sum / numberOfTrialsForBoard)
+  
+  return {mean:(sum / numberOfTrialsForBoard), median:median}
 }
 
 
@@ -199,12 +218,12 @@ function boardConverter(convertList) {
 // console.log("HERE IS TESTING BOARD", testBoard);
 // console.log("HERE ARE THE TOTAL NUMBER OF BOARDS", FiveByFiveBoards.length)
 
-function findMinIndexOfList(lst) {
+function findMinIndexOfList(lst, log=false) {
   let min = 9999999999999999999999;
   let minIndex = 0
   let index = 0
   for (let i of lst) {
-    if (i < min) {
+    if ((i!=null && i!=undefined) || i < min) {
       minIndex = index
       min = i
     }
@@ -299,7 +318,8 @@ function bruteForceOptimalBoardFinder(boardPath, numSamples=1000, progressLoggin
    
 
 
-      let averageTimeList = []
+      let averageTimeList = [];
+      let mediansList= [];
       let boardNumber = 0
       let currentProg = 0
       let totalStartTime = Date.now()
@@ -308,15 +328,16 @@ function bruteForceOptimalBoardFinder(boardPath, numSamples=1000, progressLoggin
 
 
         // console.time("AverageNumRollsPerBoard")
-        let averageNumber = averageNumberOfRollsPerBoard(i, numSamples);
+        let a = averageNumberOfRollsPerBoard(i, numSamples);
+        averageNumber=a.mean;
+        let median = a.median
         // console.timeEnd("AverageNumRollsPerBoard")
         let endTime = Date.now();
         let timeTaken = endTime - startTime;
         if ((boardNumber / testBoard.length * 100) - 1 > currentProg && timeTaken > 0) {
-          if(progressLogging){
+   
             console.log("Progress: ", (boardNumber / testBoard.length * 100).toFixed(2) + '%', ' | Time Left: ' + (timeTaken * (testBoard.length - boardNumber) / 1000).toFixed(2) + 's')
 
-          }
           currentProg = (boardNumber / testBoard.length * 100)
         }
         if (!averageNumber) {
@@ -324,6 +345,7 @@ function bruteForceOptimalBoardFinder(boardPath, numSamples=1000, progressLoggin
           return
         }
         averageTimeList.push(averageNumber);
+        mediansList.push(median)
         boardNumber++
       }
 
@@ -344,7 +366,7 @@ function bruteForceOptimalBoardFinder(boardPath, numSamples=1000, progressLoggin
             }
           }
 
-  return {maxData, minData, optimalBoard:out, minAverageNumberOfRollsTillWin:numberPerRoll, totalProcessingTime: ((Date.now() - totalStartTime) / 1000).toFixed(2) + 's', histogram: histogram}
+  return {maxData, minData, optimalBoard:out, minAverageNumberOfRollsTillWin:numberPerRoll, totalProcessingTime: ((Date.now() - totalStartTime) / 1000).toFixed(2) + 's', histogram: histogram, medianData:mediansList}
 }
 
 function printBruteForceResult(rslt){
@@ -352,7 +374,12 @@ function printBruteForceResult(rslt){
   console.log("maxData", rslt.maxData)
   console.log("minData", rslt.minData);
   console.log("MIN Rolls Board Result", rslt.optimalBoard, rslt.minAverageNumberOfRollsTillWin);
-  console.log("TOTAL PROCESSING TIME: ", rslt.totalProcessingTime)
+  console.log("TOTAL PROCESSING TIME: ", rslt.totalProcessingTime);
+  // console.log("HERE IS MEDIAN DATA", rslt.medianData);
+
+  
+  const {minIndex, minVal} = findMinIndexOfList(rslt.medianData, true);
+  console.log(`Median: ${minVal}, Index: ${minIndex}`);
 }
 
 /**
@@ -413,8 +440,8 @@ console.log("HERE ARE RAW DICE PROBS", diceProbs)
 let greedyRoundedProbability = greedyDiceProbsRoundingCalculator(diceProbs, boardSize)
 console.log("HERE IS THE GREEDY ROUNDED PROBABILITY", greedyRoundedProbability)
 
-let bruteForceResult = bruteForceOptimalBoardFinder(OneByOneFilePath, 1000, false)
-// printBruteForceResult(bruteForceResult)
+let bruteForceResult = bruteForceOptimalBoardFinder(FiveByFiveFilePath, 31, true)
+printBruteForceResult(bruteForceResult)
 
 
 //Optimal Board for the 2x2 seems to be ["GB", "GB", "GG", "GR"]
